@@ -1,67 +1,130 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>옥이네 미장원 합주 관리</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 20px;
-      background: #f5f3ef;
-      color: #252525;
-      font-family: Arial, sans-serif;
-    }
-    main { max-width: 650px; margin: auto; }
-    h1 { font-size: 26px; margin-bottom: 6px; }
-    .sub { color: #666; margin-bottom: 22px; }
-    .card {
-      background: white;
-      border-radius: 16px;
-      padding: 18px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 10px #0000000b;
-    }
-    label {
-      display: block;
-      font-weight: bold;
-      margin: 12px 0 6px;
-    }
-    input, select, textarea, button {
-      width: 100%;
-      padding: 12px;
-      border-radius: 9px;
-      border: 1px solid #d5d5d5;
-      font-size: 16px;
-    }
-    button {
-      background: #284d3c;
-      color: white;
-      border: 0;
-      font-weight: bold;
-      margin-top: 12px;
-      cursor: pointer;
-    }
-    button.secondary { background: #777; }
-    button.delete {
-      background: #a33;
-      margin-top: 8px;
-    }
-    button:disabled { opacity: 0.6; }
-    .entry {
-      border-top: 1px solid #eee;
-      padding: 12px 0;
-    }
-    .entry strong { font-size: 16px; }
-    .muted { color: #777; font-size: 13px; }
-    #app, #login { display: none; }
-    #message {
-      white-space: pre-wrap;
-      color: #9a3b23;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>옥이네 미장원 합주 관리</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --green: #284d3c;
+  --cream: #f5f3ef;
+  --gold: #d8aa42;
+  --red: #a33;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; padding: 20px;
+  background: var(--cream); color: #252525;
+  font-family: Arial, sans-serif;
+}
+main { max-width: 1200px; margin: auto; }
+h1 { font-size: 27px; margin: 0 0 6px; }
+h2 { font-size: 20px; margin-top: 0; }
+.sub { color: #666; margin-bottom: 22px; }
+.card {
+  background: white; border-radius: 16px;
+  padding: 18px; margin-bottom: 16px;
+  box-shadow: 0 2px 10px #0000000b;
+  min-width: 0;
+}
+label {
+  display: block; font-weight: bold;
+  margin: 12px 0 6px;
+}
+input, select, textarea, button {
+  width: 100%; padding: 12px;
+  border-radius: 9px; border: 1px solid #d5d5d5;
+  font-size: 16px;
+}
+button {
+  background: var(--green); color: white;
+  border: 0; font-weight: bold;
+  margin-top: 10px; cursor: pointer;
+}
+button:disabled { opacity: .6; cursor: wait; }
+button.secondary { background: #777; }
+button.delete { background: var(--red); }
+#login, #app { display: none; }
+#message { white-space: pre-wrap; color: #9a3b23; }
+.muted { color: #777; font-size: 13px; }
+.layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.95fr) minmax(360px, 1.3fr);
+  gap: 16px; align-items: start;
+}
+.calendar-head {
+  display: flex; align-items: center;
+  justify-content: space-between; gap: 8px;
+  margin-bottom: 16px;
+}
+.calendar-head button {
+  width: 44px; margin: 0; padding: 10px;
+  font-size: 20px;
+}
+#monthLabel { font-size: 20px; font-weight: bold; }
+.weekdays, #calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+.weekday {
+  text-align: center; font-size: 13px;
+  padding: 8px 0; color: #666;
+}
+.weekday:first-child { color: #c44; }
+.weekday:last-child { color: #3672b5; }
+.day {
+  position: relative;
+  min-width: 0; min-height: 54px;
+  margin: 0; padding: 7px 0 12px;
+  background: #faf9f7; color: #333;
+  border: 1px solid transparent;
+  border-radius: 9px; font-weight: normal;
+}
+.day:disabled { opacity: .35; cursor: default; }
+.day.selected {
+  background: var(--green); color: white;
+}
+.day.today:not(.selected) {
+  border-color: var(--gold); font-weight: bold;
+}
+.day.has-event::after {
+  content: ""; position: absolute;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold);
+  bottom: 5px; left: calc(50% - 3px);
+}
+.day.selected.has-event::after { background: white; }
+.day.sun { color: #c44; }
+.day.sat { color: #3672b5; }
+.day.selected.sun, .day.selected.sat { color: white; }
+.calendar-note {
+  color: #777; font-size: 12px; margin-top: 12px;
+}
+.selected-date {
+  color: var(--green); font-size: 18px;
+  font-weight: bold; margin-bottom: 12px;
+}
+.entry {
+  border-top: 1px solid #eee;
+  padding: 12px 0; overflow-wrap: anywhere;
+}
+.entry strong { font-size: 16px; }
+.entry button { margin-top: 8px; }
+.entry-actions {
+  display: flex; gap: 8px;
+}
+.entry-actions button { flex: 1; }
+.empty { color: #777; padding: 14px 0; }
+@media (max-width: 760px) {
+  body { padding: 12px; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .day { min-height: 44px; padding-top: 6px; }
+  .card { padding: 14px; }
+}
+</style>
 </head>
 <body>
 <main>
@@ -73,155 +136,308 @@
     <label for="email">이메일</label>
     <input id="email" type="email" autocomplete="username"
       placeholder="가입한 이메일">
-
     <label for="password">비밀번호</label>
     <input id="password" type="password"
       autocomplete="current-password" placeholder="비밀번호">
-
     <button id="loginBtn">로그인</button>
     <p class="muted">등록된 멤버 계정으로 로그인하세요.</p>
   </section>
 
   <section id="app">
     <div class="card">
-      <div id="welcome"></div>
+      <span id="welcome"></span>
       <button class="secondary" id="logoutBtn">로그아웃</button>
     </div>
 
-    <div class="card">
-      <h2>📅 합주 기록</h2>
+    <div class="layout">
+      <section class="card">
+        <h2>📅 합주 달력</h2>
+        <div class="calendar-head">
+          <button id="prevMonth" aria-label="이전 달">‹</button>
+          <span id="monthLabel"></span>
+          <button id="nextMonth" aria-label="다음 달">›</button>
+        </div>
+        <div class="weekdays">
+          <div class="weekday">일</div>
+          <div class="weekday">월</div>
+          <div class="weekday">화</div>
+          <div class="weekday">수</div>
+          <div class="weekday">목</div>
+          <div class="weekday">금</div>
+          <div class="weekday">토</div>
+        </div>
+        <div id="calendarGrid"></div>
+        <div class="calendar-note">
+          <span style="color:#d8aa42">●</span>
+          일정 기록이 있는 날짜
+        </div>
+        <button class="secondary" id="todayBtn">오늘 날짜로 이동</button>
+      </section>
 
-      <label for="date">합주 날짜</label>
-      <input type="date" id="date">
+      <div>
+        <section class="card">
+          <h2>📝 합주 일정 입력</h2>
+          <div class="selected-date" id="selectedDateLabel"></div>
 
-      <label for="time">합주 시간</label>
-      <input type="time" id="time" value="19:00">
+          <label for="date">합주 날짜</label>
+          <input type="date" id="date">
 
-      <label for="attendance">참석 여부</label>
-      <select id="attendance">
-        <option>미정</option>
-        <option>참석</option>
-        <option>불참</option>
-      </select>
+          <label for="time">합주 시간</label>
+          <input type="time" id="time" value="19:00">
 
-      <label for="song">곡 제목</label>
-      <input id="song" placeholder="예: 연습할 곡 제목">
+          <label for="attendance">참석 여부</label>
+          <select id="attendance">
+            <option>미정</option>
+            <option>참석</option>
+            <option>불참</option>
+          </select>
 
-      <label for="status">연습 상태</label>
-      <select id="status">
-        <option>연습 전</option>
-        <option>연습 중</option>
-        <option>합주 가능</option>
-      </select>
+          <label for="song">곡 제목</label>
+          <input id="song" placeholder="예: 연습할 곡 제목">
 
-      <label for="memo">메모</label>
-      <textarea id="memo" rows="3"
-        placeholder="준비 사항이나 전달할 내용"></textarea>
+          <label for="status">연습 상태</label>
+          <select id="status">
+            <option>연습 전</option>
+            <option>연습 중</option>
+            <option>합주 가능</option>
+          </select>
 
-      <button id="saveBtn">이 날짜의 내 기록 저장</button>
-      <button class="secondary" id="loadBtn">
-        선택한 날짜 기록 새로고침
-      </button>
-      <p id="message" role="status"></p>
-    </div>
+          <label for="memo">메모</label>
+          <textarea id="memo" rows="3"
+            placeholder="준비 사항이나 전달할 내용"></textarea>
 
-    <div class="card">
-      <h2>👥 멤버별 합주 현황</h2>
-      <div id="entries">기록을 불러오는 중...</div>
+          <button id="saveBtn">이 날짜의 내 기록 저장</button>
+          <button class="secondary" id="clearBtn">입력 내용 비우기</button>
+          <p id="message" role="status"></p>
+        </section>
+
+        <section class="card">
+          <h2>👥 선택한 날짜의 합주 현황</h2>
+          <button class="secondary" id="loadBtn">기록 새로고침</button>
+          <div id="entries">기록을 불러오는 중...</div>
+        </section>
+      </div>
     </div>
   </section>
 </main>
 
 <script>
-  const SUPABASE_URL =
-    "https://lpzxuhgaylglazzdcohf.supabase.co";
+const SUPABASE_URL =
+  "https://lpzxuhgaylglazzdcohf.supabase.co";
 
-  // 아래 두 값을 본인의 Supabase 프로젝트 정보로 설정하세요.
-  const SUPABASE_URL = "https://lpzxuhgaylglazzdcohf.supabase.co";
-  const SUPABASE_KEY = "sb_publishable_-OBHBQg1M9YJToOTcv6Kkw_qhNA877K";
+// 기존 공개용 키를 그대로 사용하세요.
+// 아래 값은 기존에 사용하던 Publishable 키입니다.
+const SUPABASE_KEY =
+  "sb_publishable_-OBHBQg1M9YJToOTcv6Kkw_qhNA877K";
 
-  const db = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+const db = window.supabase.createClient(
+  SUPABASE_URL, SUPABASE_KEY
+);
+
+const $ = id => document.getElementById(id);
+let member = null;
+let busy = false;
+let monthDate = new Date();
+let selectedDate = localDateString(new Date());
+let monthEntries = [];
+let loadVersion = 0;
+
+function localDateString(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function formatDate(dateString) {
+  const [y, m, d] = dateString.split("-").map(Number);
+  return `${y}년 ${m}월 ${d}일`;
+}
+
+function message(text) {
+  $("message").textContent = text;
+}
+
+function clearForm() {
+  $("time").value = "19:00";
+  $("attendance").value = "미정";
+  $("song").value = "";
+  $("status").value = "연습 전";
+  $("memo").value = "";
+}
+
+function updateSelectedLabel() {
+  $("selectedDateLabel").textContent =
+    formatDate(selectedDate);
+  $("date").value = selectedDate;
+}
+
+async function showSession() {
+  const { data: auth, error: authError } =
+    await db.auth.getUser();
+
+  if (authError || !auth.user) {
+    member = null;
+    $("login").style.display = "block";
+    $("app").style.display = "none";
+    return;
+  }
+
+  const { data, error } = await db
+    .from("band_members")
+    .select("member_name, session_name")
+    .eq("user_id", auth.user.id)
+    .single();
+
+  if (error || !data) {
+    message("멤버 연결을 확인할 수 없습니다. 관리자에게 문의하세요.");
+    await db.auth.signOut();
+    member = null;
+    $("login").style.display = "block";
+    $("app").style.display = "none";
+    return;
+  }
+
+  member = data;
+  $("welcome").textContent =
+    "환영합니다, " + member.member_name +
+    " (" + member.session_name + ")";
+
+  $("login").style.display = "none";
+  $("app").style.display = "block";
+
+  updateSelectedLabel();
+  await loadMonthEntries();
+  await selectDate(selectedDate);
+}
+
+async function loadMonthEntries() {
+  if (!member) return;
+
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const first = localDateString(new Date(year, month, 1));
+  const last = localDateString(new Date(year, month + 1, 0));
+
+  const { data, error } = await db
+    .from("rehearsal_entries")
+    .select("rehearsal_date")
+    .gte("rehearsal_date", first)
+    .lte("rehearsal_date", last);
+
+  if (error) {
+    $("calendarGrid").textContent =
+      "달력 일정 조회 실패: " + error.message;
+    return;
+  }
+
+  monthEntries = data || [];
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+
+  $("monthLabel").textContent =
+    `${year}년 ${month + 1}월`;
+
+  const grid = $("calendarGrid");
+  grid.replaceChildren();
+  const firstDay = new Date(year, month, 1).getDay();
+  const days = new Date(year, month + 1, 0).getDate();
+  const today = localDateString(new Date());
+  const eventDates = new Set(
+    monthEntries.map(entry => entry.rehearsal_date)
   );
 
-  let member = null;
-  let busy = false;
-
-  const $ = id => document.getElementById(id);
-
-  const now = new Date();
-  $("date").value = new Date(
-    now.getTime() - now.getTimezoneOffset() * 60000
-  ).toISOString().slice(0, 10);
-
-  function message(text) {
-    $("message").textContent = text;
+  for (let i = 0; i < firstDay; i++) {
+    const blank = document.createElement("div");
+    grid.appendChild(blank);
   }
 
-  async function showSession() {
-    const { data: auth, error: authError } =
-      await db.auth.getUser();
+  for (let day = 1; day <= days; day++) {
+    const dateString = localDateString(
+      new Date(year, month, day)
+    );
+    const btn = document.createElement("button");
+    btn.className = "day";
+    btn.textContent = day;
+    btn.setAttribute("aria-label", formatDate(dateString));
 
-    if (authError || !auth.user) {
-      member = null;
-      $("login").style.display = "block";
-      $("app").style.display = "none";
-      return;
-    }
+    const weekday = new Date(year, month, day).getDay();
+    if (weekday === 0) btn.classList.add("sun");
+    if (weekday === 6) btn.classList.add("sat");
+    if (dateString === today) btn.classList.add("today");
+    if (dateString === selectedDate) btn.classList.add("selected");
+    if (eventDates.has(dateString)) btn.classList.add("has-event");
 
-    const { data, error } = await db
-      .from("band_members")
-      .select("member_name, session_name")
-      .eq("user_id", auth.user.id)
-      .single();
+    btn.addEventListener("click", () => selectDate(dateString));
+    grid.appendChild(btn);
+  }
+}
 
-    if (error || !data) {
-      message("멤버 연결을 확인할 수 없습니다. 관리자에게 문의하세요.");
-      await db.auth.signOut();
-      $("login").style.display = "block";
-      $("app").style.display = "none";
-      return;
-    }
+async function selectDate(dateString) {
+  selectedDate = dateString;
+  monthDate = new Date(
+    Number(dateString.slice(0, 4)),
+    Number(dateString.slice(5, 7)) - 1,
+    1
+  );
 
-    member = data;
+  updateSelectedLabel();
+  renderCalendar();
+  await loadSelectedEntries(true);
+}
 
-    $("welcome").textContent =
-      "환영합니다, " + member.member_name +
-      " (" + member.session_name + ")";
+async function loadSelectedEntries(fillForm) {
+  if (!member) return;
 
-    $("login").style.display = "none";
-    $("app").style.display = "block";
+  const version = ++loadVersion;
+  $("entries").textContent = "기록을 불러오는 중...";
 
-    await loadEntries();
+  const { data, error } = await db
+    .from("rehearsal_entries")
+    .select("*")
+    .eq("rehearsal_date", selectedDate)
+    .order("created_at", { ascending: true });
+
+  if (version !== loadVersion) return;
+
+  if (error) {
+    $("entries").textContent =
+      "기록 조회 실패: " + error.message;
+    return;
   }
 
-  async function loadEntries() {
-    if (!member) return;
+  const records = data || [];
+  $("entries").replaceChildren();
 
-    $("entries").textContent = "불러오는 중...";
+  if (fillForm) {
+    const mine = records
+      .filter(item =>
+        item.member_name === member.member_name &&
+        item.session_name === member.session_name
+      )
+      .slice(-1)[0];
 
-    const { data, error } = await db
-      .from("rehearsal_entries")
-      .select("*")
-      .eq("rehearsal_date", $("date").value)
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      $("entries").textContent =
-        "불러오기 실패: " + error.message;
-      return;
+    if (mine) {
+      $("time").value = mine.rehearsal_time || "19:00";
+      $("attendance").value = mine.attendance || "미정";
+      $("song").value = mine.song_title || "";
+      $("status").value = mine.preparation_status || "연습 전";
+      $("memo").value = mine.memo || "";
+    } else {
+      clearForm();
     }
+    message("");
+  }
 
-    if (!data || data.length === 0) {
-      $("entries").textContent =
-        "이 날짜에 등록된 기록이 없습니다.";
-      return;
-    }
-
-    $("entries").replaceChildren();
-
-    data.forEach(item => {
+  if (records.length === 0) {
+    $("entries").textContent =
+      "이 날짜에 등록된 기록이 없습니다.";
+  } else {
+    records.forEach(item => {
       const div = document.createElement("div");
       div.className = "entry";
 
@@ -242,32 +458,41 @@
 
       div.append(title, detail, state);
 
-      // 본인의 이름과 파트가 모두 일치할 때만 삭제 버튼을 표시합니다.
-      if (
-        member &&
+      const isMine = member &&
         item.member_name === member.member_name &&
-        item.session_name === member.session_name
-      ) {
+        item.session_name === member.session_name;
+
+      if (isMine) {
+        const actions = document.createElement("div");
+        actions.className = "entry-actions";
+
+        const editBtn = document.createElement("button");
+        editBtn.textContent = "내 기록 불러오기";
+        editBtn.addEventListener("click", () => {
+          $("time").value = item.rehearsal_time || "19:00";
+          $("attendance").value = item.attendance || "미정";
+          $("song").value = item.song_title || "";
+          $("status").value = item.preparation_status || "연습 전";
+          $("memo").value = item.memo || "";
+          message("내 기록을 입력창에 불러왔습니다. 수정 후 저장하세요.");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete";
         deleteBtn.textContent = "내 기록 삭제";
 
         deleteBtn.addEventListener("click", async () => {
           if (busy) return;
-
-          const confirmed = confirm(
-            "이 기록을 삭제하시겠습니까?\n삭제한 기록은 복구할 수 없습니다."
-          );
-
-          if (!confirmed) return;
+          if (!confirm(
+            "이 날짜의 내 기록을 삭제하시겠습니까?\n삭제한 기록은 복구할 수 없습니다."
+          )) return;
 
           busy = true;
           deleteBtn.disabled = true;
           deleteBtn.textContent = "삭제 중...";
 
           try {
-            // id와 본인 이름, 파트를 함께 조건으로 지정합니다.
-            // 실제 삭제 허용 여부는 Supabase RLS 정책이 결정합니다.
             const { data: deleted, error: deleteError } = await db
               .from("rehearsal_entries")
               .delete()
@@ -278,131 +503,184 @@
 
             if (deleteError) {
               alert("삭제 실패: " + deleteError.message);
-              deleteBtn.disabled = false;
-              deleteBtn.textContent = "내 기록 삭제";
               return;
             }
 
             if (!deleted || deleted.length === 0) {
-              alert(
-                "삭제되지 않았습니다. 본인의 기록인지 또는 삭제 정책을 확인해 주세요."
-              );
-              deleteBtn.disabled = false;
-              deleteBtn.textContent = "내 기록 삭제";
+              alert("삭제되지 않았습니다. Supabase 삭제 권한을 확인해 주세요.");
               return;
             }
 
-            message("내 기록을 삭제했습니다.");
-            await loadEntries();
-          } catch (err) {
-            alert("삭제 중 오류가 발생했습니다.");
-            deleteBtn.disabled = false;
-            deleteBtn.textContent = "내 기록 삭제";
+            alert("내 기록을 삭제했습니다.");
+            await loadMonthEntries();
+            await loadSelectedEntries(true);
           } finally {
             busy = false;
+            if (deleteBtn.isConnected) {
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = "내 기록 삭제";
+            }
           }
         });
 
-        div.appendChild(deleteBtn);
+        actions.append(editBtn, deleteBtn);
+        div.appendChild(actions);
       }
 
       $("entries").appendChild(div);
     });
   }
 
-  $("loginBtn").addEventListener("click", async () => {
-    message("");
+  // 현재 날짜에 기록이 추가되거나 삭제된 경우 달력 표시도 갱신합니다.
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const first = localDateString(new Date(year, month, 1));
+  const last = localDateString(new Date(year, month + 1, 0));
 
-    const { error } = await db.auth.signInWithPassword({
-      email: $("email").value.trim(),
-      password: $("password").value
-    });
+  const { data: dates, error: dateError } = await db
+    .from("rehearsal_entries")
+    .select("rehearsal_date")
+    .gte("rehearsal_date", first)
+    .lte("rehearsal_date", last);
 
-    if (error) {
-      message("로그인 실패: 이메일과 비밀번호를 확인하세요.");
+  if (!dateError) {
+    monthEntries = dates || [];
+    renderCalendar();
+  }
+}
+
+async function selectDateAndRefresh(dateString) {
+  await selectDate(dateString);
+}
+
+$("loginBtn").addEventListener("click", async () => {
+  message("");
+  const { error } = await db.auth.signInWithPassword({
+    email: $("email").value.trim(),
+    password: $("password").value
+  });
+
+  if (error) {
+    message("로그인 실패: 이메일과 비밀번호를 확인하세요.");
+    return;
+  }
+  await showSession();
+});
+
+$("logoutBtn").addEventListener("click", async () => {
+  await db.auth.signOut();
+  member = null;
+  $("login").style.display = "block";
+  $("app").style.display = "none";
+});
+
+$("prevMonth").addEventListener("click", async () => {
+  monthDate = new Date(
+    monthDate.getFullYear(), monthDate.getMonth() - 1, 1
+  );
+  await loadMonthEntries();
+});
+
+$("nextMonth").addEventListener("click", async () => {
+  monthDate = new Date(
+    monthDate.getFullYear(), monthDate.getMonth() + 1, 1
+  );
+  await loadMonthEntries();
+});
+
+$("todayBtn").addEventListener("click", async () => {
+  await selectDate(localDateString(new Date()));
+});
+
+$("date").addEventListener("change", async () => {
+  if ($("date").value) {
+    await selectDateAndRefresh($("date").value);
+  }
+});
+
+$("clearBtn").addEventListener("click", () => {
+  clearForm();
+  message("입력 내용만 비웠습니다. 저장된 기록은 삭제되지 않았습니다.");
+});
+
+$("loadBtn").addEventListener("click", async () => {
+  await loadMonthEntries();
+  await loadSelectedEntries(true);
+});
+
+$("saveBtn").addEventListener("click", async () => {
+  if (!member || busy) return;
+  if (!$("date").value) {
+    message("합주 날짜를 선택하세요.");
+    return;
+  }
+
+  busy = true;
+  $("saveBtn").disabled = true;
+  message("저장 중...");
+
+  try {
+    const record = {
+      rehearsal_date: selectedDate,
+      rehearsal_time: $("time").value,
+      member_name: member.member_name,
+      session_name: member.session_name,
+      attendance: $("attendance").value,
+      song_title: $("song").value.trim(),
+      preparation_status: $("status").value,
+      memo: $("memo").value.trim()
+    };
+
+    const { data: existing, error: findError } = await db
+      .from("rehearsal_entries")
+      .select("id")
+      .eq("rehearsal_date", selectedDate)
+      .eq("member_name", member.member_name)
+      .eq("session_name", member.session_name)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (findError) {
+      message("기록 확인 실패: " + findError.message);
       return;
     }
 
-    await showSession();
-  });
+    let result;
 
-  $("logoutBtn").addEventListener("click", async () => {
-    await db.auth.signOut();
-    member = null;
-    await showSession();
-  });
-
-  $("loadBtn").addEventListener("click", loadEntries);
-
-  $("date").addEventListener("change", loadEntries);
-
-  $("saveBtn").addEventListener("click", async () => {
-    if (!member || busy) return;
-
-    busy = true;
-    message("저장 중...");
-
-    try {
-      const record = {
-        rehearsal_date: $("date").value,
-        rehearsal_time: $("time").value,
-        member_name: member.member_name,
-        session_name: member.session_name,
-        attendance: $("attendance").value,
-        song_title: $("song").value.trim(),
-        preparation_status: $("status").value,
-        memo: $("memo").value.trim()
-      };
-
-      const { data: existing, error: findError } = await db
+    if (existing && existing.length) {
+      result = await db
         .from("rehearsal_entries")
-        .select("id")
-        .eq("rehearsal_date", record.rehearsal_date)
-        .eq("member_name", member.member_name)
-        .eq("session_name", member.session_name)
-        .order("created_at", { ascending: false })
-        .limit(1);
-
-      if (findError) {
-        message("기록 확인 실패: " + findError.message);
-        return;
-      }
-
-      let result;
-
-      if (existing && existing.length) {
-        result = await db
-          .from("rehearsal_entries")
-          .update(record)
-          .eq("id", existing[0].id)
-          .select("id");
-      } else {
-        result = await db
-          .from("rehearsal_entries")
-          .insert(record)
-          .select("id");
-      }
-
-      if (result.error) {
-        message("저장 실패: " + result.error.message);
-        return;
-      }
-
-      message("저장했습니다.");
-      await loadEntries();
-    } catch (err) {
-      message("저장 중 오류가 발생했습니다.");
-    } finally {
-      busy = false;
+        .update(record)
+        .eq("id", existing[0].id);
+    } else {
+      result = await db
+        .from("rehearsal_entries")
+        .insert(record);
     }
-  });
 
-  db.auth.onAuthStateChange(() => {
-    setTimeout(showSession, 0);
-  });
+    if (result.error) {
+      message("저장 실패: " + result.error.message);
+      return;
+    }
 
-  showSession();
+    message("저장했습니다.");
+    await loadMonthEntries();
+    await loadSelectedEntries(true);
+  } catch (err) {
+    message("저장 중 오류가 발생했습니다.");
+  } finally {
+    busy = false;
+    $("saveBtn").disabled = false;
+  }
+});
+
+db.auth.onAuthStateChange(() => {
+  setTimeout(showSession, 0);
+});
+
+showSession();
 </script>
 </body>
 </html>
+
 
