@@ -1,0 +1,269 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>옥이네 미장원 합주 관리</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; padding: 20px;
+      background: #f5f3ef; color: #252525;
+      font-family: Arial, sans-serif;
+    }
+    main { max-width: 650px; margin: auto; }
+    h1 { font-size: 26px; margin-bottom: 6px; }
+    .sub { color: #666; margin-bottom: 22px; }
+    .card {
+      background: white; border-radius: 16px;
+      padding: 18px; margin-bottom: 16px;
+      box-shadow: 0 2px 10px #0000000b;
+    }
+    label { display: block; font-weight: bold; margin: 12px 0 6px; }
+    input, select, textarea, button {
+      width: 100%; padding: 12px; border-radius: 9px;
+      border: 1px solid #d5d5d5; font-size: 16px;
+    }
+    button {
+      background: #284d3c; color: white;
+      border: 0; font-weight: bold; margin-top: 12px;
+      cursor: pointer;
+    }
+    button.secondary { background: #777; }
+    .entry { border-top: 1px solid #eee; padding: 12px 0; }
+    .entry strong { font-size: 16px; }
+    .muted { color: #777; font-size: 13px; }
+    #app, #login { display: none; }
+    #message { white-space: pre-wrap; color: #9a3b23; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>🎸 옥이네 미장원</h1>
+  <div class="sub">함께 준비하는 우리의 합주</div>
+
+  <section class="card" id="login">
+    <h2>멤버 로그인</h2>
+    <label>이메일</label>
+    <input id="email" type="email" autocomplete="username"
+      placeholder="가입한 이메일">
+    <label>비밀번호</label>
+    <input id="password" type="password"
+      autocomplete="current-password" placeholder="비밀번호">
+    <button id="loginBtn">로그인</button>
+    <p class="muted">등록된 멤버 계정으로 로그인하세요.</p>
+  </section>
+
+  <section id="app">
+    <div class="card">
+      <div id="welcome"></div>
+      <button class="secondary" id="logoutBtn">로그아웃</button>
+    </div>
+
+    <div class="card">
+      <h2>📅 합주 기록</h2>
+      <label>합주 날짜</label>
+      <input type="date" id="date">
+      <label>합주 시간</label>
+      <input type="time" id="time" value="19:00">
+      <label>참석 여부</label>
+      <select id="attendance">
+        <option>미정</option>
+        <option>참석</option>
+        <option>불참</option>
+      </select>
+      <label>곡 제목</label>
+      <input id="song" placeholder="예: 연습할 곡 제목">
+      <label>연습 상태</label>
+      <select id="status">
+        <option>연습 전</option>
+        <option>연습 중</option>
+        <option>합주 가능</option>
+      </select>
+      <label>메모</label>
+      <textarea id="memo" rows="3" placeholder="준비 사항이나 전달할 내용"></textarea>
+      <button id="saveBtn">이 날짜의 내 기록 저장</button>
+      <button class="secondary" id="loadBtn">선택한 날짜 기록 새로고침</button>
+      <p id="message"></p>
+    </div>
+
+    <div class="card">
+      <h2>👥 멤버별 합주 현황</h2>
+      <div id="entries">기록을 불러오는 중...</div>
+    </div>
+  </section>
+</main>
+
+<script>
+  // 아래 두 값을 본인의 Supabase 프로젝트 정보로 설정하세요.
+  const SUPABASE_URL = "https://lpzxuhgaylglazzdcohf.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_-OBHBQg1M9YJToOTcv6Kkw_qhNA877K";
+
+  const db = window.supabase.createClient(
+    SUPABASE_URL, SUPABASE_KEY
+  );
+
+  let member = null;
+
+  const $ = id => document.getElementById(id);
+  const today = new Date();
+  const localDate = new Date(
+    today.getTime() - today.getTimezoneOffset() * 60000
+  ).toISOString().slice(0, 10);
+  $("date").value = localDate;
+
+  function message(text) {
+    $("message").textContent = text;
+  }
+
+  async function showSession() {
+    const { data: auth } = await db.auth.getUser();
+    if (!auth.user) {
+      member = null;
+      $("login").style.display = "block";
+      $("app").style.display = "none";
+      return;
+    }
+
+    const { data, error } = await db
+      .from("band_members")
+      .select("member_name, session_name")
+      .eq("user_id", auth.user.id)
+      .single();
+
+    if (error || !data) {
+      message("멤버 연결을 확인할 수 없습니다. 관리자에게 문의하세요.");
+      await db.auth.signOut();
+      $("login").style.display = "block";
+      $("app").style.display = "none";
+      return;
+    }
+
+    member = data;
+    $("welcome").textContent =
+      "환영합니다, " + member.member_name + " (" +
+      member.session_name + ")";
+    $("login").style.display = "none";
+    $("app").style.display = "block";
+    await loadEntries();
+  }
+
+  async function loadEntries() {
+    $("entries").textContent = "불러오는 중...";
+    const { data, error } = await db
+      .from("rehearsal_entries")
+      .select("*")
+      .eq("rehearsal_date", $("date").value)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      $("entries").textContent = "불러오기 실패: " + error.message;
+      return;
+    }
+
+    if (!data.length) {
+      $("entries").textContent = "이 날짜에 등록된 기록이 없습니다.";
+      return;
+    }
+
+    $("entries").innerHTML = "";
+    data.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "entry";
+
+      const title = document.createElement("strong");
+      title.textContent = item.member_name + " · " +
+        (item.attendance || "미정");
+
+      const detail = document.createElement("div");
+      detail.textContent =
+        item.rehearsal_time + " | " + (item.song_title || "곡 미입력");
+
+      const state = document.createElement("div");
+      state.className = "muted";
+      state.textContent =
+        (item.preparation_status || "연습 전") +
+        (item.memo ? " · " + item.memo : "");
+
+      div.append(title, detail, state);
+      $("entries").appendChild(div);
+    });
+  }
+
+  $("loginBtn").addEventListener("click", async () => {
+    const { error } = await db.auth.signInWithPassword({
+      email: $("email").value.trim(),
+      password: $("password").value
+    });
+    if (error) {
+      message("로그인 실패: 이메일과 비밀번호를 확인하세요.");
+      return;
+    }
+    message("");
+    await showSession();
+  });
+
+  $("logoutBtn").addEventListener("click", async () => {
+    await db.auth.signOut();
+    await showSession();
+  });
+
+  $("loadBtn").addEventListener("click", loadEntries);
+  $("date").addEventListener("change", loadEntries);
+
+  $("saveBtn").addEventListener("click", async () => {
+    if (!member) return;
+
+    message("저장 중...");
+    const record = {
+      rehearsal_date: $("date").value,
+      rehearsal_time: $("time").value,
+      member_name: member.member_name,
+      session_name: member.session_name,
+      attendance: $("attendance").value,
+      song_title: $("song").value.trim(),
+      preparation_status: $("status").value,
+      memo: $("memo").value.trim()
+    };
+
+    // 같은 날짜의 내 기록이 있으면 수정하고, 없으면 새로 저장합니다.
+    const { data: existing, error: findError } = await db
+      .from("rehearsal_entries")
+      .select("id")
+      .eq("rehearsal_date", record.rehearsal_date)
+      .eq("member_name", member.member_name)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    if (findError) {
+      message("기록 확인 실패: " + findError.message);
+      return;
+    }
+
+    let result;
+    if (existing && existing.length) {
+      result = await db.from("rehearsal_entries")
+        .update(record).eq("id", existing[0].id);
+    } else {
+      result = await db.from("rehearsal_entries").insert(record);
+    }
+
+    if (result.error) {
+      message("저장 실패: " + result.error.message);
+      return;
+    }
+
+    message("저장했습니다.");
+    await loadEntries();
+  });
+
+  db.auth.onAuthStateChange(() => {
+    setTimeout(showSession, 0);
+  });
+
+  showSession();
+</script>
+</body>
+</html>
