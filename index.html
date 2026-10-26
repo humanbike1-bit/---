@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -9,34 +8,59 @@
   <style>
     * { box-sizing: border-box; }
     body {
-      margin: 0; padding: 20px;
-      background: #f5f3ef; color: #252525;
+      margin: 0;
+      padding: 20px;
+      background: #f5f3ef;
+      color: #252525;
       font-family: Arial, sans-serif;
     }
     main { max-width: 650px; margin: auto; }
     h1 { font-size: 26px; margin-bottom: 6px; }
     .sub { color: #666; margin-bottom: 22px; }
     .card {
-      background: white; border-radius: 16px;
-      padding: 18px; margin-bottom: 16px;
+      background: white;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
       box-shadow: 0 2px 10px #0000000b;
     }
-    label { display: block; font-weight: bold; margin: 12px 0 6px; }
+    label {
+      display: block;
+      font-weight: bold;
+      margin: 12px 0 6px;
+    }
     input, select, textarea, button {
-      width: 100%; padding: 12px; border-radius: 9px;
-      border: 1px solid #d5d5d5; font-size: 16px;
+      width: 100%;
+      padding: 12px;
+      border-radius: 9px;
+      border: 1px solid #d5d5d5;
+      font-size: 16px;
     }
     button {
-      background: #284d3c; color: white;
-      border: 0; font-weight: bold; margin-top: 12px;
+      background: #284d3c;
+      color: white;
+      border: 0;
+      font-weight: bold;
+      margin-top: 12px;
       cursor: pointer;
     }
     button.secondary { background: #777; }
-    .entry { border-top: 1px solid #eee; padding: 12px 0; }
+    button.delete {
+      background: #a33;
+      margin-top: 8px;
+    }
+    button:disabled { opacity: 0.6; }
+    .entry {
+      border-top: 1px solid #eee;
+      padding: 12px 0;
+    }
     .entry strong { font-size: 16px; }
     .muted { color: #777; font-size: 13px; }
     #app, #login { display: none; }
-    #message { white-space: pre-wrap; color: #9a3b23; }
+    #message {
+      white-space: pre-wrap;
+      color: #9a3b23;
+    }
   </style>
 </head>
 <body>
@@ -46,12 +70,14 @@
 
   <section class="card" id="login">
     <h2>멤버 로그인</h2>
-    <label>이메일</label>
+    <label for="email">이메일</label>
     <input id="email" type="email" autocomplete="username"
       placeholder="가입한 이메일">
-    <label>비밀번호</label>
+
+    <label for="password">비밀번호</label>
     <input id="password" type="password"
       autocomplete="current-password" placeholder="비밀번호">
+
     <button id="loginBtn">로그인</button>
     <p class="muted">등록된 멤버 계정으로 로그인하세요.</p>
   </section>
@@ -64,29 +90,39 @@
 
     <div class="card">
       <h2>📅 합주 기록</h2>
-      <label>합주 날짜</label>
+
+      <label for="date">합주 날짜</label>
       <input type="date" id="date">
-      <label>합주 시간</label>
+
+      <label for="time">합주 시간</label>
       <input type="time" id="time" value="19:00">
-      <label>참석 여부</label>
+
+      <label for="attendance">참석 여부</label>
       <select id="attendance">
         <option>미정</option>
         <option>참석</option>
         <option>불참</option>
       </select>
-      <label>곡 제목</label>
+
+      <label for="song">곡 제목</label>
       <input id="song" placeholder="예: 연습할 곡 제목">
-      <label>연습 상태</label>
+
+      <label for="status">연습 상태</label>
       <select id="status">
         <option>연습 전</option>
         <option>연습 중</option>
         <option>합주 가능</option>
       </select>
-      <label>메모</label>
-      <textarea id="memo" rows="3" placeholder="준비 사항이나 전달할 내용"></textarea>
+
+      <label for="memo">메모</label>
+      <textarea id="memo" rows="3"
+        placeholder="준비 사항이나 전달할 내용"></textarea>
+
       <button id="saveBtn">이 날짜의 내 기록 저장</button>
-      <button class="secondary" id="loadBtn">선택한 날짜 기록 새로고침</button>
-      <p id="message"></p>
+      <button class="secondary" id="loadBtn">
+        선택한 날짜 기록 새로고침
+      </button>
+      <p id="message" role="status"></p>
     </div>
 
     <div class="card">
@@ -97,30 +133,37 @@
 </main>
 
 <script>
+  const SUPABASE_URL =
+    "https://lpzxuhgaylglazzdcohf.supabase.co";
+
   // 아래 두 값을 본인의 Supabase 프로젝트 정보로 설정하세요.
   const SUPABASE_URL = "https://lpzxuhgaylglazzdcohf.supabase.co";
   const SUPABASE_KEY = "sb_publishable_-OBHBQg1M9YJToOTcv6Kkw_qhNA877K";
 
   const db = window.supabase.createClient(
-    SUPABASE_URL, SUPABASE_KEY
+    SUPABASE_URL,
+    SUPABASE_KEY
   );
 
   let member = null;
+  let busy = false;
 
   const $ = id => document.getElementById(id);
-  const today = new Date();
-  const localDate = new Date(
-    today.getTime() - today.getTimezoneOffset() * 60000
+
+  const now = new Date();
+  $("date").value = new Date(
+    now.getTime() - now.getTimezoneOffset() * 60000
   ).toISOString().slice(0, 10);
-  $("date").value = localDate;
 
   function message(text) {
     $("message").textContent = text;
   }
 
   async function showSession() {
-    const { data: auth } = await db.auth.getUser();
-    if (!auth.user) {
+    const { data: auth, error: authError } =
+      await db.auth.getUser();
+
+    if (authError || !auth.user) {
       member = null;
       $("login").style.display = "block";
       $("app").style.display = "none";
@@ -142,16 +185,22 @@
     }
 
     member = data;
+
     $("welcome").textContent =
-      "환영합니다, " + member.member_name + " (" +
-      member.session_name + ")";
+      "환영합니다, " + member.member_name +
+      " (" + member.session_name + ")";
+
     $("login").style.display = "none";
     $("app").style.display = "block";
+
     await loadEntries();
   }
 
   async function loadEntries() {
+    if (!member) return;
+
     $("entries").textContent = "불러오는 중...";
+
     const { data, error } = await db
       .from("rehearsal_entries")
       .select("*")
@@ -159,27 +208,31 @@
       .order("created_at", { ascending: true });
 
     if (error) {
-      $("entries").textContent = "불러오기 실패: " + error.message;
+      $("entries").textContent =
+        "불러오기 실패: " + error.message;
       return;
     }
 
-    if (!data.length) {
-      $("entries").textContent = "이 날짜에 등록된 기록이 없습니다.";
+    if (!data || data.length === 0) {
+      $("entries").textContent =
+        "이 날짜에 등록된 기록이 없습니다.";
       return;
     }
 
-    $("entries").innerHTML = "";
+    $("entries").replaceChildren();
+
     data.forEach(item => {
       const div = document.createElement("div");
       div.className = "entry";
 
       const title = document.createElement("strong");
-      title.textContent = item.member_name + " · " +
-        (item.attendance || "미정");
+      title.textContent =
+        item.member_name + " · " + (item.attendance || "미정");
 
       const detail = document.createElement("div");
       detail.textContent =
-        item.rehearsal_time + " | " + (item.song_title || "곡 미입력");
+        (item.rehearsal_time || "") + " | " +
+        (item.song_title || "곡 미입력");
 
       const state = document.createElement("div");
       state.className = "muted";
@@ -188,75 +241,160 @@
         (item.memo ? " · " + item.memo : "");
 
       div.append(title, detail, state);
+
+      // 본인의 이름과 파트가 모두 일치할 때만 삭제 버튼을 표시합니다.
+      if (
+        member &&
+        item.member_name === member.member_name &&
+        item.session_name === member.session_name
+      ) {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete";
+        deleteBtn.textContent = "내 기록 삭제";
+
+        deleteBtn.addEventListener("click", async () => {
+          if (busy) return;
+
+          const confirmed = confirm(
+            "이 기록을 삭제하시겠습니까?\n삭제한 기록은 복구할 수 없습니다."
+          );
+
+          if (!confirmed) return;
+
+          busy = true;
+          deleteBtn.disabled = true;
+          deleteBtn.textContent = "삭제 중...";
+
+          try {
+            // id와 본인 이름, 파트를 함께 조건으로 지정합니다.
+            // 실제 삭제 허용 여부는 Supabase RLS 정책이 결정합니다.
+            const { data: deleted, error: deleteError } = await db
+              .from("rehearsal_entries")
+              .delete()
+              .eq("id", item.id)
+              .eq("member_name", member.member_name)
+              .eq("session_name", member.session_name)
+              .select("id");
+
+            if (deleteError) {
+              alert("삭제 실패: " + deleteError.message);
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = "내 기록 삭제";
+              return;
+            }
+
+            if (!deleted || deleted.length === 0) {
+              alert(
+                "삭제되지 않았습니다. 본인의 기록인지 또는 삭제 정책을 확인해 주세요."
+              );
+              deleteBtn.disabled = false;
+              deleteBtn.textContent = "내 기록 삭제";
+              return;
+            }
+
+            message("내 기록을 삭제했습니다.");
+            await loadEntries();
+          } catch (err) {
+            alert("삭제 중 오류가 발생했습니다.");
+            deleteBtn.disabled = false;
+            deleteBtn.textContent = "내 기록 삭제";
+          } finally {
+            busy = false;
+          }
+        });
+
+        div.appendChild(deleteBtn);
+      }
+
       $("entries").appendChild(div);
     });
   }
 
   $("loginBtn").addEventListener("click", async () => {
+    message("");
+
     const { error } = await db.auth.signInWithPassword({
       email: $("email").value.trim(),
       password: $("password").value
     });
+
     if (error) {
       message("로그인 실패: 이메일과 비밀번호를 확인하세요.");
       return;
     }
-    message("");
+
     await showSession();
   });
 
   $("logoutBtn").addEventListener("click", async () => {
     await db.auth.signOut();
+    member = null;
     await showSession();
   });
 
   $("loadBtn").addEventListener("click", loadEntries);
+
   $("date").addEventListener("change", loadEntries);
 
   $("saveBtn").addEventListener("click", async () => {
-    if (!member) return;
+    if (!member || busy) return;
 
+    busy = true;
     message("저장 중...");
-    const record = {
-      rehearsal_date: $("date").value,
-      rehearsal_time: $("time").value,
-      member_name: member.member_name,
-      session_name: member.session_name,
-      attendance: $("attendance").value,
-      song_title: $("song").value.trim(),
-      preparation_status: $("status").value,
-      memo: $("memo").value.trim()
-    };
 
-    // 같은 날짜의 내 기록이 있으면 수정하고, 없으면 새로 저장합니다.
-    const { data: existing, error: findError } = await db
-      .from("rehearsal_entries")
-      .select("id")
-      .eq("rehearsal_date", record.rehearsal_date)
-      .eq("member_name", member.member_name)
-      .order("created_at", { ascending: false })
-      .limit(1);
+    try {
+      const record = {
+        rehearsal_date: $("date").value,
+        rehearsal_time: $("time").value,
+        member_name: member.member_name,
+        session_name: member.session_name,
+        attendance: $("attendance").value,
+        song_title: $("song").value.trim(),
+        preparation_status: $("status").value,
+        memo: $("memo").value.trim()
+      };
 
-    if (findError) {
-      message("기록 확인 실패: " + findError.message);
-      return;
+      const { data: existing, error: findError } = await db
+        .from("rehearsal_entries")
+        .select("id")
+        .eq("rehearsal_date", record.rehearsal_date)
+        .eq("member_name", member.member_name)
+        .eq("session_name", member.session_name)
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (findError) {
+        message("기록 확인 실패: " + findError.message);
+        return;
+      }
+
+      let result;
+
+      if (existing && existing.length) {
+        result = await db
+          .from("rehearsal_entries")
+          .update(record)
+          .eq("id", existing[0].id)
+          .select("id");
+      } else {
+        result = await db
+          .from("rehearsal_entries")
+          .insert(record)
+          .select("id");
+      }
+
+      if (result.error) {
+        message("저장 실패: " + result.error.message);
+        return;
+      }
+
+      message("저장했습니다.");
+      await loadEntries();
+    } catch (err) {
+      message("저장 중 오류가 발생했습니다.");
+    } finally {
+      busy = false;
     }
-
-    let result;
-    if (existing && existing.length) {
-      result = await db.from("rehearsal_entries")
-        .update(record).eq("id", existing[0].id);
-    } else {
-      result = await db.from("rehearsal_entries").insert(record);
-    }
-
-    if (result.error) {
-      message("저장 실패: " + result.error.message);
-      return;
-    }
-
-    message("저장했습니다.");
-    await loadEntries();
   });
 
   db.auth.onAuthStateChange(() => {
@@ -267,3 +405,4 @@
 </script>
 </body>
 </html>
+
